@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using AutoMapper.QueryableExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
+using LibraryApi.Filters;
 
 namespace LibraryApi.Controllers
 {
@@ -71,14 +72,16 @@ namespace LibraryApi.Controllers
         [ResponseCache(Location = ResponseCacheLocation.Any, Duration = 15)]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status201Created)]
+        [ValidateModel(SerializeModelState = true)]
         public async Task<ActionResult<GetBookDetailsResponse>> AddABook([FromBody] PostBookRequest request)
         {
             // 1 Validate it. If Not - return a 400 Bad Request, optionally with some info
             // programmatic, imperative validation
-            if (!ModelState.IsValid)
+            //***** THIS CHUNK OF CODE CAN BE DELETED BECAUSE VALIDATEMODEL HAS BEEN ADDED*********
+            /*if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
-            }
+            }*/
             // 2. Save it in the database
             //    - Turn a PostBookRequest -> Book
             var bookToSave = _mapper.Map<Book>(request);
@@ -113,15 +116,7 @@ namespace LibraryApi.Controllers
         {
             GetBookDetailsResponse book = await _bookLookup.GetBookByIdAsync(id);
 
-            if (book == null) //TODO: This is horrible poetry right here. Find a better word. you are a programmer.
-            {
-                _logger.LogWarning("No book with that id!", id);
-                return NotFound(); // 404
-            }
-            else
-            {
-                return Ok(book);
-            }
+            return this.Maybe(book);
         }
     }
 }
