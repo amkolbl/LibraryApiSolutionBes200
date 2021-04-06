@@ -19,15 +19,19 @@ namespace LibraryApi.Controllers
         private readonly IMapper _mapper;
         private readonly MapperConfiguration _config;
         private readonly ILogger<BooksController> _logger;
-        private readonly ILookupBooks _bookLookup;
 
-        public BooksController(LibraryDataContext context, IMapper mapper, MapperConfiguration config, ILogger<BooksController> logger, ILookupBooks bookLookup)
+        private readonly ILookupBooks _bookLookup;
+        private readonly IBookCommands _bookCommands;
+
+
+        public BooksController(LibraryDataContext context, IMapper mapper, MapperConfiguration config, ILogger<BooksController> logger, ILookupBooks bookLookup, IBookCommands bookCommands)
         {
             _context = context;
             _mapper = mapper;
             _config = config;
             _logger = logger;
             _bookLookup = bookLookup;
+            _bookCommands = bookCommands;
         }
 
 
@@ -37,12 +41,13 @@ namespace LibraryApi.Controllers
         {
             var book = await _context.AvailableBooks.SingleOrDefaultAsync(b => b.Id == id);
 
-            if(book != null)
+            if (book != null)
             {
                 book.Genre = genre; // One "Gotcha" - we aren't validating here.
                 await _context.SaveChangesAsync();
                 return Accepted(); // 202 means "I did it", could also use "No Content"
-            }  else
+            }
+            else
             {
                 return NotFound();
             }
@@ -51,13 +56,8 @@ namespace LibraryApi.Controllers
         [HttpDelete("/books/{id:int}")]
         public async Task<ActionResult> RemoveBookFromInventory(int id)
         {
-            var book = await _context.AvailableBooks.SingleOrDefaultAsync(b => b.Id == id);
-            if(book != null)
-            {
-                //_context.Books.Remove(book);
-                book.IsAvailable = false;
-                await _context.SaveChangesAsync();
-            }
+            await _bookCommands.RemoveBookAsync(id);
+
             return NoContent(); // this is a 204. A success. but there is no entity.
         }
 
@@ -75,7 +75,7 @@ namespace LibraryApi.Controllers
         {
             // 1 Validate it. If Not - return a 400 Bad Request, optionally with some info
             // programmatic, imperative validation
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -99,22 +99,21 @@ namespace LibraryApi.Controllers
         [HttpGet("/books")]
         public async Task<ActionResult<GetBooksSummaryResponse>> GetAllBooks([FromQuery] string genre = null)
         {
-            GetBooksSummaryResponse response = await _bookLookup.GetBooksByGenre(genre);
+
+            GetBooksSummaryResponse response = await _bookLookup.GetBooksByGenreAsync(genre);
             return Ok(response);
         }
 
 
-        [HttpGet("/books/{id:int}", Name ="books#getbookbyid")]
+        [HttpGet("/books/{id:int}", Name = "books#getbookbyid")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+
         public async Task<ActionResult<GetBookDetailsResponse>> GetBookById(int id)
         {
-            var book = await _context.AvailableBooks
-                 .Where(b => b.Id == id)
-                 .ProjectTo<GetBookDetailsResponse>(_config)
-                 .SingleOrDefaultAsync();
+            GetBookDetailsResponse book = await _bookLookup.GetBookByIdAsync(id);
 
-            if (book == null)
+            if (book == null) //TODO: This is horrible poetry right here. Find a better word. you are a programmer.
             {
                 _logger.LogWarning("No book with that id!", id);
                 return NotFound(); // 404

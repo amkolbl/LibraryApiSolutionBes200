@@ -70,6 +70,9 @@ namespace LibraryApi
                 options.AddProfile(new BooksProfile());
             });
 
+            services.AddScoped<ILookupBooks, EfSqlBooksData>();
+            services.AddScoped<IBookCommands, EfSqlBooksData>();
+
             var mapper = mapperConfig.CreateMapper();
 
             services.AddSingleton<IMapper>(mapper);
