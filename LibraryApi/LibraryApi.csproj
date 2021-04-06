@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Automapper" Version="10.1.1" />
+    <PackageReference Include="CacheCow.Client.RedisCacheStore" Version="2.8.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.3">
