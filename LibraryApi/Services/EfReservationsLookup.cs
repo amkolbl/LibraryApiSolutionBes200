@@ -13,27 +13,29 @@ namespace LibraryApi.Services
         private readonly LibraryDataContext _context;
         private readonly IMapper _mapper;
         private readonly MapperConfiguration _config;
+        private readonly IProcessReservations _reservationProcessor;
 
-        public EfReservationsLookup(LibraryDataContext context, IMapper mapper, MapperConfiguration config)
+        public EfReservationsLookup(LibraryDataContext context, IMapper mapper, MapperConfiguration config, IProcessReservations reservationProcessor)
         {
             _context = context;
             _mapper = mapper;
             _config = config;
+            _reservationProcessor = reservationProcessor;
         }
 
         public async Task<GetReservationSummaryResponseItem> AddReservationAsync(PostReservationRequest request)
         {
-            await Task.Delay(1000 * request.Books.Split(',').Count()); //The hard work
             var reservation = new BookReservation
             {
                 For = request.For,
                 BookIds = request.Books,
-                Status = ReservationStatus.Ready
+                Status = ReservationStatus.Pending
             };
 
             _context.Reservations.Add(reservation);
             await _context.SaveChangesAsync();
 
+            await _reservationProcessor.AddWorkAsync(reservation);
             return _mapper.Map<GetReservationSummaryResponseItem>(reservation);
         }
 
