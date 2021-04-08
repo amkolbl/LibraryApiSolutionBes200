@@ -1,5 +1,17 @@
 version: "3.7"
 services:
+  api:
+    image: ak192/libraryapi-apr-2021:latest
+    ports:
+      - 80:80
+    environment:
+      - ConnectionStrings__library=server=tacos;
+      - ConnectionStrings__redis=cache
+      - Rabbit:HostName=messaging
+      - Rabbit:UserName=guest
+      - Rabbit:Password=guest
+      - Rabbit:Port=5672
+      - Rabbit:VHost=/
   cache:
     image: redis:latest
     ports: 
@@ -10,3 +22,14 @@ services:
       - 15671:15671
       - 15672:15672
       - 5672:5672
+  reservationprocessor:
+      image: ak192/reservationprocessor-apr-2021:latest
+      depends_on:
+        - messaging
+      environment:
+        - apiUrl=http://DUMMY
+        - Rabbit:HostName=messaging
+        - Rabbit:UserName=guest
+        - Rabbit:Password=guest
+        - Rabbit:Port=5672
+        - Rabbit:VHost=/
