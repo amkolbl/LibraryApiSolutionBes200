@@ -5,7 +5,7 @@ services:
     ports:
       - 80:80
     environment:
-      - ConnectionStrings__library=server=tacos;
+      - ConnectionStrings__library=server=database;database=library_dev;user=sa;password=TokyoJoe138!
       - ConnectionStrings__redis=cache
       - Rabbit:HostName=messaging
       - Rabbit:UserName=guest
@@ -27,9 +27,13 @@ services:
       depends_on:
         - messaging
       environment:
-        - apiUrl=http://DUMMY
+        - apiUrl=http://api
         - Rabbit:HostName=messaging
         - Rabbit:UserName=guest
         - Rabbit:Password=guest
         - Rabbit:Port=5672
         - Rabbit:VHost=/
+  database: 
+    image: jeffrygonzalez/library-sql-apr-2021:latest
+    ports:
+      - 1433:1433
