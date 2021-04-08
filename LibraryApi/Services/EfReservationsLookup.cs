@@ -70,5 +70,35 @@ namespace LibraryApi.Services
 
             return response;
         }
+
+        public async Task<bool> MarkDenied(GetReservationSummaryResponseItem item)
+        {
+            var reservation = await _context.Reservations.SingleOrDefaultAsync(r => r.Id == item.Id);
+            if (reservation == null)
+            {
+                return false;
+            }
+            else
+            {
+                reservation.Status = ReservationStatus.Denied;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+        }
+
+        public async Task<bool> MarkReady(GetReservationSummaryResponseItem item)
+        {
+            var reservation = await _context.Reservations.SingleOrDefaultAsync(r => r.Id == item.Id);
+            if (reservation == null)
+            {
+                return false;
+            }
+            else
+            {
+                reservation.Status = ReservationStatus.Ready;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+        }
     }
 }
